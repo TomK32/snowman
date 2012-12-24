@@ -3,75 +3,179 @@ var Snowman;
 
 Snowman = (function() {
 
-  function Snowman() {}
+  Snowman.prototype.dt = 1000 / 60;
 
-  Snowman.prototype.load = function() {
-    var _this = this;
-    _.bind(this);
-    Crafty.init(400, 336);
-    Crafty.scene("game", function() {
-      _this.garden = _this.createGarden();
-      _this.ball = _this.createBall();
-      Crafty.e("2D, Canvas, Text").attr({
-        w: 100,
-        h: 20,
-        x: 10,
-        y: 0
-      }).text("Alex der Schneemann").textColor('#222222');
-      Crafty.bind('mousedown', _this.startBall);
-      return _this;
-    });
-    Crafty.scene("game");
-    return this;
+  Snowman.prototype.last_time = Date.now();
+
+  Snowman.prototype.balls = [];
+
+  Snowman.prototype.eyes = [];
+
+  Snowman.prototype.messages = [];
+
+  Snowman.prototype.carrot = {
+    x: 20,
+    y: 30
   };
 
-  Snowman.prototype.startBall = function(event) {
-    return this.drawBall = true;
+  function Snowman() {
+    _.bindAll(this);
+    this.$canvas = $("#canvas");
+    this.canvas = this.$canvas[0];
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    this.context = this.canvas.getContext("2d");
+    this.$canvas.bind('mousedown', this.startBall);
+    this.$canvas.bind('touchdown', this.startBall);
+    this.snowfall = new Snowfall(this.context);
+    _.throttle(this.draw, this.dt);
+    _.throttle(this.update, this.dt);
+    this.images = {
+      coal: this.loadImage('coal.png'),
+      carrot: this.loadImage('carrot.png')
+    };
+    this.update();
+    this.draw();
+    this;
+
+  }
+
+  Snowman.prototype.loadImage = function(filename) {
+    var image;
+    image = new Image();
+    image.src = filename;
+    return image;
   };
 
-  Snowman.prototype.moveBall = function(event) {
-    if (this.drawBall) {
-      console.log(this);
-      Crafty.e('Particles').attr({
-        x: event.realX,
-        y: event.realY,
-        angle: 200
-      }).particles({
-        x: event.realX,
-        y: event.realY,
-        duration: 1,
-        gravity: {
-          x: 0,
-          y: 0.01
-        },
-        startColour: [255, 255, 255, 1],
-        endColour: [250, 250, 255, 1],
-        startColourRandom: [0, 0, 5, 0],
-        endColourRandom: [0, 0, 20, 0],
-        angle: 180
-      });
-      window.snowman.ball.x = event.realX - window.snowman.ball.w / 2;
-      window.snowman.ball.y = event.realY - window.snowman.ball.h / 2;
-      window.snowman.ball.h += 1;
-      window.snowman.ball.w += 1;
-      return window.snowman.ball.draw();
+  Snowman.prototype.draw = function() {
+    var ball, eye, i, message, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    this.drawGarden();
+    this.snowfall.draw();
+    _ref = this.balls;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      ball = _ref[_i];
+      ball.draw();
+    }
+    _ref1 = this.eyes;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      eye = _ref1[_j];
+      this.drawEye(eye);
+    }
+    _ref2 = this.messages;
+    for (i = _k = 0, _len2 = _ref2.length; _k < _len2; i = ++_k) {
+      message = _ref2[i];
+      this.drawText(message, 10, 40 + 20 * i);
+    }
+    if (this.carrot) {
+      this.drawCarrot();
+    }
+    this.drawText('Alex der Schneemann', 10, 20, '#000000', '20px sans-serif');
+    return window.setTimeout(this.draw, this.dt);
+  };
+
+  Snowman.prototype.update = function() {
+    var dt, new_time;
+    new_time = Date.now();
+    dt = (new_time - this.last_time) / 1024;
+    this.last_time = new_time;
+    window.setTimeout(this.update, this.dt);
+    this.snowfall.update(dt);
+    if (this.ball) {
+      return this.ball.update(dt);
     }
   };
 
+  Snowman.prototype.startBall = function(event) {
+    if (this.balls.length >= 3) {
+      return;
+    }
+    this.ball = new Ball(this.balls.length, this);
+    this.balls.push(this.ball);
+    this.$canvas.bind('mouseup', this.endBall);
+    return this.$canvas.bind('touchup', this.endBall);
+  };
+
   Snowman.prototype.endBall = function(event) {
-    window.snowman.ball = window.snowman.createBall();
-    return this.drawBall = false;
+    this.$canvas.unbind('mouseup', this.endBall);
+    this.$canvas.unbind('touchup', this.endBall);
+    this.ball.stop();
+    this.ball = null;
+    if (this.balls.length >= 3) {
+      this.$canvas.unbind('mousedown', this.startBall);
+      this.$canvas.unbind('touchdown', this.startBall);
+      this.messages.push('Und jetzt setzt die Augen');
+      return this.startEyes();
+    }
   };
 
-  Snowman.prototype.createBall = function() {
-    return Crafty.e('2D, Canvas, Circle, Color').color('#FFFFFF');
+  Snowman.prototype.drawText = function(text, x, y, color, font) {
+    this.context.fillStyle = color || '#000000';
+    this.context.font = font || '14px serif';
+    this.context.fillText(text, x || 10, y || 20);
+    return this.drawText;
   };
 
-  Snowman.prototype.createGarden = function() {
-    return Crafty.e('2D, Canvas, Input, Mouse, Color').attr({
-      w: Crafty.viewport.width,
-      h: Crafty.viewport.height
-    }).color('#AAAAAA').areaMap([0, 0], [Crafty.viewport.width, 0], [Crafty.viewport.width, Crafty.viewport.height], [0, Crafty.viewport.height]).bind('MouseDown', this.startBall).bind('MouseUp', this.endBall).bind('MouseMove', this.moveBall).bind('TouchDown', this.startBall);
+  Snowman.prototype.drawGarden = function() {
+    this.context.fillStyle = '#DDDDDD';
+    return this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  };
+
+  Snowman.prototype.startEyes = function() {
+    this.$canvas.bind('mousedown', this.setEye);
+    return this.$canvas.bind('touchdown', this.setEye);
+  };
+
+  Snowman.prototype.setEye = function(event) {
+    var last;
+    last = _.last(this.balls);
+    if (this.inCircle(event.offsetX, event.offsetY, last.x, last.y, last.radius)) {
+      if (!this.eyes[0] || !this.inCircle(event.offsetX, event.offsetY, this.eyes[0].x, this.eyes[0].y, this.eyes[0].radius)) {
+        this.eyes.push({
+          x: event.offsetX,
+          y: event.offsetY,
+          radius: 10
+        });
+      }
+    }
+    if (this.eyes.length === 2) {
+      this.$canvas.unbind('mousedown', this.setEye);
+      this.$canvas.unbind('touchdown', this.setEye);
+      return this.startCarrot();
+    }
+  };
+
+  Snowman.prototype.startCarrot = function() {
+    this.$canvas.bind('mousedown', this.setCarrot);
+    return this.$canvas.bind('touchdown', this.setCarrot);
+  };
+
+  Snowman.prototype.setCarrot = function(event) {
+    var last;
+    last = _.last(this.balls);
+    if (this.inCircle(event.offsetX, event.offsetY, last.x, last.y, last.radius)) {
+      this.carrot = {
+        x: event.offsetX,
+        y: event.offsetY - 20
+      };
+      this.$canvas.unbind('mousedown', this.setCarrot);
+      return this.$canvas.unbind('touchdown', this.setCarrot);
+    }
+  };
+
+  Snowman.prototype.drawCarrot = function() {
+    return this.context.drawImage(this.images.carrot, this.carrot.x, this.carrot.y);
+  };
+
+  Snowman.prototype.inCircle = function(x1, y1, x2, y2, radius) {
+    var sq;
+    sq = function(x) {
+      return x * x;
+    };
+    return sq(x1 - x2) + sq(y1 - y2) < sq(radius);
+  };
+
+  Snowman.prototype.drawEye = function(eye) {
+    return this.context.drawImage(this.images.coal, eye.x - eye.radius / 2, eye.y - eye.radius / 2);
   };
 
   return Snowman;
