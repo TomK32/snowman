@@ -32,6 +32,14 @@ class Ball
     @game.context.beginPath()
     @game.context.arc(@x, @y, @radius, 0, @tworPI)
     @game.context.fill()
+    @game.context.beginPath()
+    @game.context.arc(@x, @y, @radius, 0, @tworPI/3)
+    @game.context.strokeStyle = '#888888'
+    @game.context.stroke()
+    @game.context.beginPath()
+    @game.context.arc(@x, @y, @radius, @tworPI/3, @tworPI)
+    @game.context.strokeStyle = '#CCCCCC'
+    @game.context.stroke()
     @game.context.fillStyle = '#ffffff00'
 
 

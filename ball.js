@@ -46,6 +46,14 @@ Ball = (function() {
     this.game.context.beginPath();
     this.game.context.arc(this.x, this.y, this.radius, 0, this.tworPI);
     this.game.context.fill();
+    this.game.context.beginPath();
+    this.game.context.arc(this.x, this.y, this.radius, 0, this.tworPI / 3);
+    this.game.context.strokeStyle = '#888888';
+    this.game.context.stroke();
+    this.game.context.beginPath();
+    this.game.context.arc(this.x, this.y, this.radius, this.tworPI / 3, this.tworPI);
+    this.game.context.strokeStyle = '#CCCCCC';
+    this.game.context.stroke();
     return this.game.context.fillStyle = '#ffffff00';
   };
 

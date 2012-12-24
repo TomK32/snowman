@@ -11,12 +11,13 @@ Snowman = (function() {
 
   Snowman.prototype.eyes = [];
 
-  Snowman.prototype.messages = [];
+  Snowman.prototype.instructions = false;
 
-  Snowman.prototype.carrot = {
-    x: 20,
-    y: 30
-  };
+  Snowman.prototype.carrot = false;
+
+  Snowman.prototype.cursor = false;
+
+  Snowman.prototype.animals = [];
 
   function Snowman() {
     _.bindAll(this);
@@ -27,13 +28,22 @@ Snowman = (function() {
     this.context = this.canvas.getContext("2d");
     this.$canvas.bind('mousedown', this.startBall);
     this.$canvas.bind('touchdown', this.startBall);
+    this.$canvas.bind('mousemove', this.setCursor);
+    this.$canvas.bind('touchmove', this.setCursor);
     this.snowfall = new Snowfall(this.context);
     _.throttle(this.draw, this.dt);
     _.throttle(this.update, this.dt);
+    this.instructions = 'Klicke/Tippe und fahr herum um drei Kugeln zu machen';
     this.images = {
       coal: this.loadImage('coal.png'),
-      carrot: this.loadImage('carrot.png')
+      carrot: this.loadImage('carrot.png'),
+      background: this.loadImage('background.png'),
+      animals: {
+        hoppel: this.loadImage('hoppel.png')
+      }
     };
+    this.animals = [];
+    this.placeAnimals(4);
     this.update();
     this.draw();
     this;
@@ -47,27 +57,47 @@ Snowman = (function() {
     return image;
   };
 
+  Snowman.prototype.placeAnimals = function(num) {
+    var i, _i, _results,
+      _this = this;
+    _results = [];
+    for (i = _i = 0; 0 <= num ? _i <= num : _i >= num; i = 0 <= num ? ++_i : --_i) {
+      _results.push((function(i) {
+        return _this.animals.push({
+          x: Math.floor(Math.random() * _this.canvas.width) * 0.8 + _this.canvas.width * 0.1,
+          y: Math.floor(Math.random() * _this.canvas.height * 0.1) + _this.canvas.height * 0.6,
+          image: _.values(_this.images.animals)[i % _.values(_this.images.animals).length]
+        });
+      })(i));
+    }
+    return _results;
+  };
+
   Snowman.prototype.draw = function() {
-    var ball, eye, i, message, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var animal, ball, eye, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
     this.drawGarden();
     this.snowfall.draw();
-    _ref = this.balls;
+    _ref = this.animals;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      ball = _ref[_i];
+      animal = _ref[_i];
+      this.drawImage(animal);
+    }
+    _ref1 = this.balls;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      ball = _ref1[_j];
       ball.draw();
     }
-    _ref1 = this.eyes;
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      eye = _ref1[_j];
+    _ref2 = this.eyes;
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      eye = _ref2[_k];
       this.drawEye(eye);
     }
-    _ref2 = this.messages;
-    for (i = _k = 0, _len2 = _ref2.length; _k < _len2; i = ++_k) {
-      message = _ref2[i];
-      this.drawText(message, 10, 40 + 20 * i);
-    }
+    this.drawText(this.instructions, 10, 40);
     if (this.carrot) {
       this.drawCarrot();
+    }
+    if (this.cursor) {
+      this.context.drawImage(this.cursor.image, this.cursor.x, this.cursor.y);
     }
     this.drawText('Alex der Schneemann', 10, 20, '#000000', '20px sans-serif');
     return window.setTimeout(this.draw, this.dt);
@@ -100,10 +130,10 @@ Snowman = (function() {
     this.$canvas.unbind('touchup', this.endBall);
     this.ball.stop();
     this.ball = null;
+    this.instructions = 'Und noch eine Kugel';
     if (this.balls.length >= 3) {
       this.$canvas.unbind('mousedown', this.startBall);
       this.$canvas.unbind('touchdown', this.startBall);
-      this.messages.push('Und jetzt setzt die Augen');
       return this.startEyes();
     }
   };
@@ -117,10 +147,15 @@ Snowman = (function() {
 
   Snowman.prototype.drawGarden = function() {
     this.context.fillStyle = '#DDDDDD';
-    return this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    return this.context.drawImage(this.images.background, 0, 0, this.canvas.width, this.canvas.height);
   };
 
   Snowman.prototype.startEyes = function() {
+    this.cursor = {
+      image: this.images.coal
+    };
+    this.instructions = 'Und jetzt setzt die Augen';
     this.$canvas.bind('mousedown', this.setEye);
     return this.$canvas.bind('touchdown', this.setEye);
   };
@@ -131,9 +166,8 @@ Snowman = (function() {
     if (this.inCircle(event.offsetX, event.offsetY, last.x, last.y, last.radius)) {
       if (!this.eyes[0] || !this.inCircle(event.offsetX, event.offsetY, this.eyes[0].x, this.eyes[0].y, this.eyes[0].radius)) {
         this.eyes.push({
-          x: event.offsetX,
-          y: event.offsetY,
-          radius: 10
+          x: event.offsetX - this.images.coal.width,
+          y: event.offsetY - this.images.coal.height
         });
       }
     }
@@ -146,24 +180,36 @@ Snowman = (function() {
 
   Snowman.prototype.startCarrot = function() {
     this.$canvas.bind('mousedown', this.setCarrot);
-    return this.$canvas.bind('touchdown', this.setCarrot);
+    this.$canvas.bind('touchdown', this.setCarrot);
+    this.cursor.image = this.images.carrot;
+    return this.instructions = 'Und jetzt noch eine Karotte';
   };
 
   Snowman.prototype.setCarrot = function(event) {
     var last;
     last = _.last(this.balls);
-    if (this.inCircle(event.offsetX, event.offsetY, last.x, last.y, last.radius)) {
+    if (this.inCircle(event.offsetX - this.images.carrot.width / 2, event.offsetY - this.images.carrot.height / 2, last.x, last.y, last.radius)) {
       this.carrot = {
-        x: event.offsetX,
-        y: event.offsetY - 20
+        x: event.offsetX - this.images.carrot.width / 2,
+        y: event.offsetY - this.images.carrot.height / 2
       };
       this.$canvas.unbind('mousedown', this.setCarrot);
-      return this.$canvas.unbind('touchdown', this.setCarrot);
+      this.$canvas.unbind('touchdown', this.setCarrot);
+      this.cursor = null;
+      return this.instructions = 'Fertig :)';
     }
   };
 
   Snowman.prototype.drawCarrot = function() {
     return this.context.drawImage(this.images.carrot, this.carrot.x, this.carrot.y);
+  };
+
+  Snowman.prototype.setCursor = function(event) {
+    if (!this.cursor) {
+      return;
+    }
+    this.cursor.x = event.offsetX - this.cursor.image.width / 2;
+    return this.cursor.y = event.offsetY - this.cursor.image.height / 2;
   };
 
   Snowman.prototype.inCircle = function(x1, y1, x2, y2, radius) {
@@ -175,7 +221,11 @@ Snowman = (function() {
   };
 
   Snowman.prototype.drawEye = function(eye) {
-    return this.context.drawImage(this.images.coal, eye.x - eye.radius / 2, eye.y - eye.radius / 2);
+    return this.context.drawImage(this.images.coal, eye.x, eye.y);
+  };
+
+  Snowman.prototype.drawImage = function(el) {
+    return this.context.drawImage(el.image, el.x, el.y);
   };
 
   return Snowman;
