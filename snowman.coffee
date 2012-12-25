@@ -8,6 +8,8 @@ class Snowman
   carrot: false
   cursor: false
   animals: []
+  score: 0
+  scores: []
 
   constructor: () ->
     _.bindAll(@)
@@ -64,6 +66,8 @@ class Snowman
     if @cursor
       @context.drawImage(@cursor.image, @cursor.x, @cursor.y)
     @drawText('Alex der Schneemann', 10, 20, '#000000', '20px sans-serif')
+    @drawText(@score, @canvas.width - 50, 20, '#000000', '20px sans-serif')
+    @drawText(score, @canvas.width - 50, 35 + i * 20, '#000000', '12px sans-serif') for score, i in @scores
     window.setTimeout(@draw, @dt)
 
   update: ->
@@ -76,6 +80,12 @@ class Snowman
       @ball.update(dt)
     #
 
+  addScore: (score) ->
+    score = Math.floor(score)
+    return if score == 0
+    @score += score
+    @scores.push score
+
   startBall: (event) ->
     if @balls.length >= 3
       return
@@ -87,6 +97,13 @@ class Snowman
   endBall: (event) ->
     @$canvas.unbind('mouseup', @endBall)
     @$canvas.unbind('touchup', @endBall)
+    @addScore(@ball.radius)
+    if @balls.length > 1
+      last = @balls[@balls.length - 2]
+      # subtract score if not on a line
+      @addScore(- Math.abs(@ball.x - last.x))
+      # subtract if not touching
+      @addScore(- Math.abs((last.y - @ball.y) - (@ball.radius + last.radius)) + @ball.radius/4)
     @ball.stop()
     @ball = null
     @instructions = 'Und noch eine Kugel'

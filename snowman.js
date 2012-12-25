@@ -19,6 +19,10 @@ Snowman = (function() {
 
   Snowman.prototype.animals = [];
 
+  Snowman.prototype.score = 0;
+
+  Snowman.prototype.scores = [];
+
   function Snowman() {
     _.bindAll(this);
     this.$canvas = $("#canvas");
@@ -80,7 +84,7 @@ Snowman = (function() {
   };
 
   Snowman.prototype.draw = function() {
-    var animal, ball, eye, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var animal, ball, eye, i, score, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3;
     this.drawGarden();
     this.snowfall.draw();
     _ref = this.animals;
@@ -106,6 +110,12 @@ Snowman = (function() {
       this.context.drawImage(this.cursor.image, this.cursor.x, this.cursor.y);
     }
     this.drawText('Alex der Schneemann', 10, 20, '#000000', '20px sans-serif');
+    this.drawText(this.score, this.canvas.width - 50, 20, '#000000', '20px sans-serif');
+    _ref3 = this.scores;
+    for (i = _l = 0, _len3 = _ref3.length; _l < _len3; i = ++_l) {
+      score = _ref3[i];
+      this.drawText(score, this.canvas.width - 50, 35 + i * 20, '#000000', '12px sans-serif');
+    }
     return window.setTimeout(this.draw, this.dt);
   };
 
@@ -121,6 +131,15 @@ Snowman = (function() {
     }
   };
 
+  Snowman.prototype.addScore = function(score) {
+    score = Math.floor(score);
+    if (score === 0) {
+      return;
+    }
+    this.score += score;
+    return this.scores.push(score);
+  };
+
   Snowman.prototype.startBall = function(event) {
     if (this.balls.length >= 3) {
       return;
@@ -132,8 +151,15 @@ Snowman = (function() {
   };
 
   Snowman.prototype.endBall = function(event) {
+    var last;
     this.$canvas.unbind('mouseup', this.endBall);
     this.$canvas.unbind('touchup', this.endBall);
+    this.addScore(this.ball.radius);
+    if (this.balls.length > 1) {
+      last = this.balls[this.balls.length - 2];
+      this.addScore(-Math.abs(this.ball.x - last.x));
+      this.addScore(-Math.abs((last.y - this.ball.y) - (this.ball.radius + last.radius)) + this.ball.radius / 4);
+    }
     this.ball.stop();
     this.ball = null;
     this.instructions = 'Und noch eine Kugel';
