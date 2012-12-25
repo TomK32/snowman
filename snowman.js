@@ -39,13 +39,19 @@ Snowman = (function() {
       carrot: this.loadImage('carrot.png'),
       background: this.loadImage('background.png'),
       animals: {
-        hoppel: this.loadImage('hoppel.png')
+        hoppel: this.loadImage('hoppel.png'),
+        hoppel2: this.loadImage('hoppel2.png')
       }
     };
     this.animals = [];
     this.placeAnimals(4);
     this.update();
     this.draw();
+    this.cursor = {
+      x: 0,
+      y: 0,
+      image: this.images.carrot
+    };
     this;
 
   }
@@ -53,7 +59,7 @@ Snowman = (function() {
   Snowman.prototype.loadImage = function(filename) {
     var image;
     image = new Image();
-    image.src = filename;
+    image.src = filename + '?' + Date.now();
     return image;
   };
 
@@ -164,7 +170,7 @@ Snowman = (function() {
     var last;
     last = _.last(this.balls);
     if (this.inCircle(event.offsetX, event.offsetY, last.x, last.y, last.radius)) {
-      if (!this.eyes[0] || !this.inCircle(event.offsetX, event.offsetY, this.eyes[0].x, this.eyes[0].y, this.eyes[0].radius)) {
+      if (!this.eyes[0] || !this.inCircle(event.offsetX - this.images.coal.width, event.offsetY - this.images.coal.height, this.eyes[0].x, this.eyes[0].y, this.eyes[0].radius)) {
         this.eyes.push({
           x: event.offsetX - this.images.coal.width,
           y: event.offsetY - this.images.coal.height
@@ -188,10 +194,10 @@ Snowman = (function() {
   Snowman.prototype.setCarrot = function(event) {
     var last;
     last = _.last(this.balls);
-    if (this.inCircle(event.offsetX - this.images.carrot.width / 2, event.offsetY - this.images.carrot.height / 2, last.x, last.y, last.radius)) {
+    if (this.inCircle(event.offsetX - this.images.carrot.width, event.offsetY - this.images.carrot.height, last.x, last.y, last.radius)) {
       this.carrot = {
-        x: event.offsetX - this.images.carrot.width / 2,
-        y: event.offsetY - this.images.carrot.height / 2
+        x: event.offsetX - this.images.carrot.width,
+        y: event.offsetY - this.images.carrot.height
       };
       this.$canvas.unbind('mousedown', this.setCarrot);
       this.$canvas.unbind('touchdown', this.setCarrot);
@@ -208,8 +214,8 @@ Snowman = (function() {
     if (!this.cursor) {
       return;
     }
-    this.cursor.x = event.offsetX - this.cursor.image.width / 2;
-    return this.cursor.y = event.offsetY - this.cursor.image.height / 2;
+    this.cursor.x = event.offsetX - this.cursor.image.width;
+    return this.cursor.y = event.offsetY - this.cursor.image.height;
   };
 
   Snowman.prototype.inCircle = function(x1, y1, x2, y2, radius) {
