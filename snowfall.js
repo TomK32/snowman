@@ -43,15 +43,26 @@ Snowfall = (function() {
   };
 
   Snowfall.prototype.draw = function() {
-    var i, p, _i, _ref;
+    var halfpi, i, p, pi, _i, _j, _ref, _ref1, _results;
     this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
     this.ctx.beginPath();
+    halfpi = Math.PI / 2;
+    pi = Math.PI * 2;
     for (i = _i = 0, _ref = this.max_particles; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
       p = this.particles[i];
       this.ctx.moveTo(p.x, p.y);
-      this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, true);
+      this.ctx.arc(p.x, p.y, p.r, 0, pi, true);
     }
-    return this.ctx.fill();
+    this.ctx.fill();
+    this.ctx.strokeStyle = 'rgba(100,100,155, 0.6)';
+    _results = [];
+    for (i = _j = 0, _ref1 = this.max_particles; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+      p = this.particles[i];
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, p.r, 0, halfpi);
+      _results.push(this.ctx.stroke());
+    }
+    return _results;
   };
 
   Snowfall.prototype.update = function(dt) {

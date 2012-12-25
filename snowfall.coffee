@@ -37,11 +37,20 @@ class Snowfall
   draw: () ->
     @ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
     @ctx.beginPath()
+    halfpi = Math.PI/2
+    pi = Math.PI*2
     for i in [0..@max_particles]
       p = @particles[i]
       @ctx.moveTo(p.x, p.y)
-      @ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true)
+      @ctx.arc(p.x, p.y, p.r, 0, pi, true)
     @ctx.fill()
+    @ctx.strokeStyle = 'rgba(100,100,155, 0.6)'
+    for i in [0..@max_particles]
+      p = @particles[i]
+      @ctx.beginPath()
+      @ctx.arc(p.x, p.y, p.r, 0, halfpi)
+      @ctx.stroke()
+
 
   #to move the snowflakes
   #angle will be an ongoing incremental flag. Sin and Cos functions will be applied to it to create vertical and horizontal movements of the flakes

@@ -3,6 +3,7 @@ class Snowman
   dt: 1000 / 60
   last_time: Date.now()
   balls: []
+  schal: false
   eyes: []
   instructions: false
   carrot: false
@@ -31,6 +32,8 @@ class Snowman
       coal: @loadImage('coal.png')
       carrot: @loadImage('carrot.png')
       background: @loadImage('background.png')
+      schal: @loadImage('schal.png')
+      hat: @loadImage('hut.png')
       animals:
         hoppel: @loadImage('hoppel.png')
         hoppel2: @loadImage('hoppel2.png')
@@ -38,7 +41,7 @@ class Snowman
     @placeAnimals(4)
     @update()
     @draw()
-    @cursor = {x: 0, y: 0, image: @images.carrot}
+    @cursor = false
     @
 
   loadImage: (filename) ->
@@ -49,9 +52,12 @@ class Snowman
   placeAnimals: (num) ->
     for i in [0..num]
       do (i) =>
+        x =  Math.floor(Math.random() * @canvas.width) * 0.8 + @canvas.width * 0.1
+        y = Math.floor(Math.random() * @canvas.height*0.5) + @canvas.height* 0.5
         @animals.push({
-          x: Math.floor(Math.random() * @canvas.width) * 0.8 + @canvas.width * 0.1,
-          y: Math.floor(Math.random() * @canvas.height*0.1) + @canvas.height* 0.6,
+          x: x,
+          y: y,
+          scale: (y*y) / (@canvas.height * @canvas.height),
           image: _.values(@images.animals)[i % _.values(@images.animals).length]
         })
   draw: () ->
@@ -59,6 +65,8 @@ class Snowman
     @snowfall.draw()
     @drawImage(animal) for animal in @animals
     ball.draw() for ball in @balls
+    @drawImage(@schal) if @schal
+    @drawImage(@hat) if @hat
     @drawEye(eye) for eye in @eyes
     @drawText(@instructions, 10, 40)
     if @carrot
@@ -66,8 +74,8 @@ class Snowman
     if @cursor
       @context.drawImage(@cursor.image, @cursor.x, @cursor.y)
     @drawText('Alex der Schneemann', 10, 20, '#000000', '20px sans-serif')
-    @drawText(@score, @canvas.width - 50, 20, '#000000', '20px sans-serif')
-    @drawText(score, @canvas.width - 50, 35 + i * 20, '#000000', '12px sans-serif') for score, i in @scores
+    @drawText(@score + ' Punkte', @canvas.width - 120, 20, '#000000', '20px sans-serif')
+    @drawText(score, @canvas.width - 120, 35 + i * 20, '#000000', '12px sans-serif') for score, i in @scores
     window.setTimeout(@draw, @dt)
 
   update: ->
@@ -104,13 +112,31 @@ class Snowman
       @addScore(- Math.abs(@ball.x - last.x))
       # subtract if not touching
       @addScore(- Math.abs((last.y - @ball.y) - (@ball.radius + last.radius)) + @ball.radius/4)
+      @addScore(last.radius - @ball.radius)
     @ball.stop()
     @ball = null
     @instructions = 'Und noch eine Kugel'
     if @balls.length >= 3
+      @placeSchal()
       @$canvas.unbind('mousedown', @startBall)
       @$canvas.unbind('touchdown', @startBall)
       @startEyes()
+
+  placeSchal: () ->
+    b3 = @balls[@balls.length - 1]
+    b2 = @balls[@balls.length - 2]
+    @schal = {
+      x: b3.x - @images.schal.width / 2,
+      y: b3.y + b3.radius - b3.radius / 6,
+      scale: @images.schal.width / b3.radius * 1.2,
+      image: @images.schal
+    }
+    @hat = {
+      x: b3.x - @images.hat.width / 2,
+      y: b3.y - b3.radius * 0.7 - @images.hat.height,
+      scale: @images.hat.width / b3.radius,
+      image: @images.hat
+    }
 
   drawText: (text, x, y, color, font) ->
     @context.fillStyle = color || '#000000'
@@ -134,6 +160,7 @@ class Snowman
     if @inCircle(event.offsetX, event.offsetY, last.x, last.y, last.radius)
       if !@eyes[0] || ! @inCircle(event.offsetX - @images.coal.width, event.offsetY - @images.coal.height, @eyes[0].x, @eyes[0].y, @eyes[0].radius)
         @eyes.push({x: event.offsetX - @images.coal.width, y: event.offsetY - @images.coal.height})
+        #@addScore(((@eyes.length * last.radius/2) + last.radius/4) - (last.x - event.offsetX))
     if @eyes.length == 2
       @$canvas.unbind('mousedown', @setEye)
       @$canvas.unbind('touchdown', @setEye)
@@ -171,4 +198,11 @@ class Snowman
     @context.drawImage(@images.coal, eye.x, eye.y)
 
   drawImage: (el) ->
-    @context.drawImage(el.image, el.x, el.y)
+    @context.save()
+    @context.translate(el.x, el.y)
+    if el.scaleX && el.scaleY
+      @context.scale(el.scaleX, el.scaleY)
+    if el.scale
+      @context.scale(el.scale, el.scale)
+    @context.drawImage(el.image, 0, 0)
+    @context.restore()
