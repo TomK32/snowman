@@ -43,7 +43,7 @@ Snowman = (function() {
     this.images = {
       coal: this.loadImage('coal.png'),
       carrot: this.loadImage('carrot.png'),
-      background: this.loadImage('background.png'),
+      background: this.loadImage('background.jpg'),
       schal: this.loadImage('schal.png'),
       hat: this.loadImage('hut.png'),
       animals: {

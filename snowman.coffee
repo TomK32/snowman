@@ -31,7 +31,7 @@ class Snowman
     @images =
       coal: @loadImage('coal.png')
       carrot: @loadImage('carrot.png')
-      background: @loadImage('background.png')
+      background: @loadImage('background.jpg')
       schal: @loadImage('schal.png')
       hat: @loadImage('hut.png')
       animals:
